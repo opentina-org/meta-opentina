@@ -1,0 +1,15 @@
+# Copy to yocto-sources.conf in this repository (gitignored).
+
+YOCTO_BRANCH="scarthgap"
+
+POKY_REPO="https://git.yoctoproject.org/poky"
+POKY_BRANCH="${YOCTO_BRANCH}"
+
+OE_REPO="https://github.com/openembedded/meta-openembedded.git"
+OE_BRANCH="${YOCTO_BRANCH}"
+
+QT_REPO="https://github.com/meta-qt5/meta-qt5.git"
+QT_BRANCH="${YOCTO_BRANCH}"
+
+# Yocto download & build directory (default: ../yocto next to this repo)
+# OPENTINA_YOCTO_DIR="/path/to/yocto-workspace"

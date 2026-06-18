@@ -1,0 +1,22 @@
+# OpenTina local.conf sample, copied by scripts/setup-environment
+
+MACHINE ??= 'a733-aiot'
+DISTRO ??= 'opentina-minimal'
+
+PACKAGE_CLASSES ?= "package_rpm"
+
+DL_DIR ?= "${TOPDIR}/../dl"
+SSTATE_DIR ?= "${TOPDIR}/../sstate-cache"
+
+# Parallel builds (adjust to host CPU/RAM)
+BB_NUMBER_THREADS ?= "${@oe.utils.cpu_count()}"
+PARALLEL_MAKE ?= "-j ${@oe.utils.cpu_count()}"
+
+# Rootfs-only: dummy kernel until Allwinner BSP (U-Boot + linux) is added
+PREFERRED_PROVIDER_virtual/kernel = "linux-dummy"
+
+# Uncomment when network downloads are allowed for first-time builds:
+# BB_NO_NETWORK = "0"
+
+# Qt profile: set by setup-environment when DISTRO=opentina-qt
+# OPENTINA_PROFILE = "qt"

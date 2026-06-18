@@ -1,0 +1,168 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# OpenTina Yocto build environment setup (official poky + meta-oe only)
+#
+# Prerequisite: ./yocto-init.sh   (from meta-opentina repository root)
+#
+# Usage (new build dir):
+#   MACHINE=a733-aiot DISTRO=opentina-minimal \\
+#     source scripts/setup-environment ../yocto/build-opentina
+#
+# Or use paths relative to Yocto workspace parent:
+#   source scripts/setup-environment yocto/build-opentina
+#   (resolved against directory above meta-opentina)
+
+set -eo pipefail
+
+PROGNAME="setup-environment"
+PACKAGE_CLASSES=${PACKAGE_CLASSES:-package_rpm}
+
+usage() {
+    cat <<EOF
+Usage: MACHINE=<machine> DISTRO=<distro> source ${PROGNAME} <build-dir>
+
+  <build-dir>  e.g. ../yocto/build-opentina or yocto/build-opentina
+
+Examples:
+  MACHINE=a733-aiot DISTRO=opentina-minimal \\
+    source scripts/setup-environment ../yocto/build-opentina
+EOF
+}
+
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    echo "ERROR: source this script, do not execute it." >&2
+    usage
+    exit 1
+fi
+
+if [ "$(whoami)" = "root" ]; then
+    echo "ERROR: do not run Yocto builds as root." >&2
+    return 1
+fi
+
+if [ $# -lt 1 ]; then
+    usage
+    return 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+META_OPENTINA_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+WORKSPACE_DIR="$(cd "${META_OPENTINA_DIR}/.." && pwd)"
+
+if [ -f "${META_OPENTINA_DIR}/yocto-sources.conf" ]; then
+    # shellcheck disable=SC1091
+    . "${META_OPENTINA_DIR}/yocto-sources.conf"
+fi
+
+YOCTO_DIR="${OPENTINA_YOCTO_DIR:-${WORKSPACE_DIR}/yocto}"
+INIT_SCRIPT="${META_OPENTINA_DIR}/yocto-init.sh"
+BUILD_ARG="$1"
+BUILD_DIR="${BUILD_ARG}"
+
+if [ "${BUILD_DIR#/}" = "${BUILD_DIR}" ]; then
+    # Relative path: prefer under Yocto workspace, then workspace parent
+    if [ -d "${WORKSPACE_DIR}/${BUILD_DIR}" ] || [ "${BUILD_DIR#yocto/}" != "${BUILD_DIR}" ]; then
+        BUILD_DIR="${WORKSPACE_DIR}/${BUILD_DIR}"
+    elif [ -d "${YOCTO_DIR}/${BUILD_ARG}" ] || [ "${BUILD_ARG#build-}" != "${BUILD_ARG}" ]; then
+        BUILD_DIR="${YOCTO_DIR}/${BUILD_ARG}"
+    else
+        BUILD_DIR="${WORKSPACE_DIR}/${BUILD_DIR}"
+    fi
+fi
+
+if [ ! -f "${YOCTO_DIR}/sources/poky/oe-init-build-env" ]; then
+    echo "ERROR: Official Poky not found at ${YOCTO_DIR}/sources/poky" >&2
+    echo "Run: ${INIT_SCRIPT}" >&2
+    if [ -x "${INIT_SCRIPT}" ] && [ "${OPENTINA_AUTO_INIT:-0}" = "1" ]; then
+        echo "OPENTINA_AUTO_INIT=1: running yocto-init.sh ..."
+        "${INIT_SCRIPT}" $([ "${DISTRO:-}" = "opentina-qt" ] && echo --qt)
+    else
+        return 1
+    fi
+fi
+
+if [ ! -e "${YOCTO_DIR}/sources/meta-opentina" ]; then
+    mkdir -p "${YOCTO_DIR}/sources"
+    ln -sfn "${META_OPENTINA_DIR}" "${YOCTO_DIR}/sources/meta-opentina"
+    echo "Linked ${YOCTO_DIR}/sources/meta-opentina -> ${META_OPENTINA_DIR}"
+fi
+
+if [ ! -e "${BUILD_DIR}/conf/local.conf" ] && [ -z "${MACHINE:-}" ]; then
+    echo "ERROR: MACHINE must be set when creating a new build directory." >&2
+    usage
+    return 1
+fi
+
+if [ ! -e "${BUILD_DIR}/conf/local.conf" ] && [ -z "${DISTRO:-}" ]; then
+    echo "ERROR: DISTRO must be set when creating a new build directory." >&2
+    usage
+    return 1
+fi
+
+if [ "${DISTRO:-}" = "opentina-qt" ]; then
+    if [ ! -d "${YOCTO_DIR}/sources/meta-qt5" ]; then
+        echo "Fetching meta-qt5 (${INIT_SCRIPT} --qt) ..."
+        "${SCRIPT_DIR}/fetch-qt-layers.sh"
+    fi
+    export OPENTINA_PROFILE=qt
+else
+    export OPENTINA_PROFILE=minimal
+fi
+
+export OPENTINA_YOCTO_DIR="${YOCTO_DIR}"
+
+NEW_BUILD=false
+if [ ! -d "${BUILD_DIR}/conf" ]; then
+    NEW_BUILD=true
+fi
+
+OEROOT="${YOCTO_DIR}/sources/poky"
+# shellcheck disable=SC1091
+. "${OEROOT}/oe-init-build-env" "${BUILD_DIR}" >/dev/null
+
+export PATH="$(echo "${PATH}" | sed 's/\(:.\|:\)*:/:/g;s/^.\?://;s/:.\?$//')"
+
+TEMPLATES="${META_OPENTINA_DIR}/conf/templates"
+
+if [ "${NEW_BUILD}" = true ]; then
+    mkdir -p conf
+    cp -f "${TEMPLATES}/bblayers.conf.sample" conf/bblayers.conf
+    cp -f "${TEMPLATES}/local.conf.sample" conf/local.conf
+
+    sed -e "s,MACHINE ??=.*,MACHINE ??= '${MACHINE}',g" \
+        -e "s,DISTRO ??=.*,DISTRO ??= '${DISTRO}',g" \
+        -e "s,PACKAGE_CLASSES ?=.*,PACKAGE_CLASSES ?= '${PACKAGE_CLASSES}',g" \
+        -i conf/local.conf
+
+    if [ "${OPENTINA_PROFILE}" = "qt" ]; then
+        echo 'OPENTINA_PROFILE = "qt"' >> conf/local.conf
+    fi
+
+    sed -e "s,\${TOPDIR}/../dl,${YOCTO_DIR}/dl,g" \
+        -e "s,\${TOPDIR}/../sstate-cache,${YOCTO_DIR}/sstate-cache,g" \
+        -i conf/local.conf
+fi
+
+if [ -n "${MACHINE:-}" ] && grep -q "^MACHINE" conf/local.conf; then
+    sed -i "s,^MACHINE ??=.*,MACHINE ??= '${MACHINE}',g" conf/local.conf
+fi
+if [ -n "${DISTRO:-}" ] && grep -q "^DISTRO" conf/local.conf; then
+    sed -i "s,^DISTRO ??=.*,DISTRO ??= '${DISTRO}',g" conf/local.conf
+fi
+
+cat <<EOF
+
+OpenTina build environment ready.
+
+  MACHINE=${MACHINE:-$(grep '^MACHINE' conf/local.conf | sed "s/.*'\(.*\)'.*/\1/")}
+  DISTRO=${DISTRO:-$(grep '^DISTRO' conf/local.conf | sed "s/.*'\(.*\)'.*/\1/")}
+  BUILDDIR=${BUILD_DIR}
+  YOCTO_WORKSPACE=${YOCTO_DIR}
+
+Build rootfs:
+  bitbake opentina-image-minimal
+  bitbake opentina-image-qt
+
+Or: ./opentina-build.sh minimal | qt
+
+EOF

@@ -1,0 +1,19 @@
+# POKY_BBLAYERS_CONF_VERSION is increased each time build/conf/bblayers.conf
+# changes incompatibly
+POKY_BBLAYERS_CONF_VERSION = "2"
+
+BBPATH = "${TOPDIR}"
+BBFILES ?= ""
+
+OPENTINA_YOCTO_DIR := "${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + '/../..')}"
+
+BBLAYERS ?= " \
+  ${OPENTINA_YOCTO_DIR}/sources/poky/meta \
+  ${OPENTINA_YOCTO_DIR}/sources/poky/meta-poky \
+  ${OPENTINA_YOCTO_DIR}/sources/poky/meta-yocto-bsp \
+  ${OPENTINA_YOCTO_DIR}/sources/meta-openembedded/meta-oe \
+  ${OPENTINA_YOCTO_DIR}/sources/meta-openembedded/meta-multimedia \
+  ${OPENTINA_YOCTO_DIR}/sources/meta-openembedded/meta-python \
+  ${OPENTINA_YOCTO_DIR}/sources/meta-opentina \
+  ${@bb.utils.contains('OPENTINA_PROFILE', 'qt', '  ${OPENTINA_YOCTO_DIR}/sources/meta-qt5 ', '', d)} \
+  "
