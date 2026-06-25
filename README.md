@@ -42,6 +42,12 @@ cd meta-opentina
 |--------|-------|-------------|
 | `opentina-minimal` | `opentina-image-minimal` | CLI rootfs (glibc, OpenSSH) |
 | `opentina-qt` | `opentina-image-qt` | Qt5 GUI (`yocto-init.sh --qt`) |
+| `opentina-hmi` | `opentina-image-hmi` | Wayland/Weston HMI, software-rendered (Mesa swrast/llvmpipe, GStreamer, PulseAudio, XWayland) |
+
+Build: `./opentina-build.sh hmi`. Software GL is forced via `/etc/environment`
+(`LIBGL_ALWAYS_SOFTWARE=1`) until an A733 GPU/DRM driver lands; Weston still
+needs a kernel KMS device (e.g. `CONFIG_DRM_SIMPLEDRM`). Chromium (Ozone/Wayland)
+is deferred — it needs meta-browser + meta-clang and a multi-hour build.
 
 Default machine: **`a733-aiot`**
 

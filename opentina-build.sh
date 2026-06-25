@@ -61,16 +61,18 @@ PROFILE="${1:-}"
 shift || true
 
 case "${PROFILE}" in
-    env|minimal|qt)
+    env|minimal|qt|hmi)
         ;;
     -h|--help|help|"")
         cat <<EOF
-Usage: $(basename "$0") <env|minimal|qt> [bitbake-args...]
+Usage: $(basename "$0") <env|minimal|qt|hmi> [bitbake-args...]
 
   env minimal   Prepare build dir (opentina-minimal)
   env qt        Prepare build dir (opentina-qt, fetches meta-qt5)
+  env hmi       Prepare build dir (opentina-hmi)
   minimal       bitbake opentina-image-minimal
   qt            bitbake opentina-image-qt
+  hmi           bitbake opentina-image-hmi (Wayland/Weston, software-rendered)
 
 Prerequisite: ./yocto-init.sh  (once per workspace)
 EOF
@@ -99,8 +101,13 @@ if [ "${PROFILE}" = "env" ]; then
             BUILD_REL="build-opentina-qt"
             ensure_yocto_sources true
             ;;
+        hmi)
+            DISTRO=opentina-hmi
+            BUILD_REL="build-opentina-hmi"
+            ensure_yocto_sources false
+            ;;
         *)
-            echo "env requires minimal or qt" >&2
+            echo "env requires minimal, qt or hmi" >&2
             exit 1
             ;;
     esac
@@ -111,17 +118,26 @@ if [ "${PROFILE}" = "env" ]; then
     exit 0
 fi
 
-if [ "${PROFILE}" = "minimal" ]; then
-    DISTRO=opentina-minimal
-    IMAGE=opentina-image-minimal
-    BUILD_REL="build-opentina"
-    ensure_yocto_sources false
-else
-    DISTRO=opentina-qt
-    IMAGE=opentina-image-qt
-    BUILD_REL="build-opentina-qt"
-    ensure_yocto_sources true
-fi
+case "${PROFILE}" in
+    minimal)
+        DISTRO=opentina-minimal
+        IMAGE=opentina-image-minimal
+        BUILD_REL="build-opentina"
+        ensure_yocto_sources false
+        ;;
+    hmi)
+        DISTRO=opentina-hmi
+        IMAGE=opentina-image-hmi
+        BUILD_REL="build-opentina-hmi"
+        ensure_yocto_sources false
+        ;;
+    qt)
+        DISTRO=opentina-qt
+        IMAGE=opentina-image-qt
+        BUILD_REL="build-opentina-qt"
+        ensure_yocto_sources true
+        ;;
+esac
 
 export OPENTINA_YOCTO_DIR="${YOCTO_DIR}"
 # shellcheck disable=SC1090
