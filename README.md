@@ -108,4 +108,12 @@ sudo apt install gawk wget git diffstat unzip texinfo gcc build-essential \
   xterm python3-subunit mesa-common-dev zstd liblz4-tool
 ```
 
-On Ubuntu 24.04, fix BitBake user namespace restrictions if AppArmor blocks unprivileged userns.
+On Ubuntu 24.04+, BitBake needs unprivileged user namespaces. If you see
+`User namespaces are not usable by BitBake, possibly due to AppArmor`:
+
+```bash
+echo 'kernel.apparmor_restrict_unprivileged_userns=0' | sudo tee /etc/sysctl.d/99-bitbake-userns.conf
+sudo sysctl -p /etc/sysctl.d/99-bitbake-userns.conf
+```
+
+`./opentina-build.sh` also tries to apply this automatically via `sudo -n` or Docker.
