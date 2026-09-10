@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
-SUMMARY = "OpenTina Wayland/Weston HMI rootfs for Allwinner A733 (software-rendered)"
-DESCRIPTION = "Wayland + Weston compositor, XWayland, software-rendered Mesa \
-(swrast/llvmpipe, no GPU blob), GStreamer, and PulseAudio for display/HMI \
-bring-up. Chromium is deferred (see TODO below)."
+SUMMARY = "OpenTina Wayland/Weston HMI rootfs for Allwinner A733"
+DESCRIPTION = "Wayland + Weston compositor, XWayland, Mesa with the imagination \
+Vulkan driver (PowerVR BXM-4-64) and zink, GStreamer, and PulseAudio for \
+display/HMI bring-up. Chromium is deferred (see TODO below)."
 
 inherit core-image
 inherit opentina-default-users
@@ -27,16 +27,19 @@ IMAGE_INSTALL += " \
     gstreamer1.0-libav \
     pulseaudio pulseaudio-server alsa-utils \
     fontconfig liberation-fonts \
-    libinput evtest \
+    libinput evtest powervr-firmware-a733 \
+    mesa-demos kmscube libdrm-tests wayland-utils \
+    vulkan-tools glmark2 weston-examples \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd systemd-serialgetty', 'sysvinit sysvinit-inittab', d)} \
 "
 
-# Force software GL until an A733 GPU/DRM driver exists (mirrors the apt rootfs).
-set_swrast_env() {
-    printf '%s\n%s\n' 'LIBGL_ALWAYS_SOFTWARE=1' 'GALLIUM_DRIVER=llvmpipe' \
+# The imagination driver is not Vulkan-conformant yet and refuses to load
+# without this opt-in.
+set_pvr_env() {
+    printf '%s\n' 'PVR_I_WANT_A_BROKEN_VULKAN_DRIVER=1' \
         >> ${IMAGE_ROOTFS}${sysconfdir}/environment
 }
-ROOTFS_POSTPROCESS_COMMAND += "set_swrast_env;"
+ROOTFS_POSTPROCESS_COMMAND += "set_pvr_env;"
 
 export IMAGE_BASENAME = "opentina-image-hmi"
 
