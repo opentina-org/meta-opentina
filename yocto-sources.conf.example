@@ -1,9 +1,15 @@
 # Copy to yocto-sources.conf in this repository (gitignored).
 
-YOCTO_BRANCH="scarthgap"
+YOCTO_BRANCH="wrynose"
 
-POKY_REPO="https://git.yoctoproject.org/poky"
-POKY_BRANCH="${YOCTO_BRANCH}"
+OECORE_REPO="https://github.com/openembedded/openembedded-core.git"
+OECORE_BRANCH="${YOCTO_BRANCH}"
+
+BITBAKE_REPO="https://github.com/openembedded/bitbake.git"
+# BITBAKE_BRANCH="2.18"   # derived from YOCTO_BRANCH when unset
+
+META_YOCTO_REPO="https://github.com/yoctoproject/meta-yocto.git"
+META_YOCTO_BRANCH="${YOCTO_BRANCH}"
 
 OE_REPO="https://github.com/openembedded/meta-openembedded.git"
 OE_BRANCH="${YOCTO_BRANCH}"

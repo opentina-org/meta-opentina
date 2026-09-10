@@ -205,7 +205,9 @@ fi
 YOCTO_DIR="${OPENTINA_YOCTO_DIR:-${WORKSPACE_DIR}/yocto}"
 
 yocto_sources_ready() {
-    [ -f "${YOCTO_DIR}/sources/poky/oe-init-build-env" ] &&
+    [ -f "${YOCTO_DIR}/sources/openembedded-core/oe-init-build-env" ] &&
+        [ -d "${YOCTO_DIR}/sources/bitbake/bin" ] &&
+        [ -f "${YOCTO_DIR}/sources/meta-yocto/meta-poky/conf/layer.conf" ] &&
         [ -f "${YOCTO_DIR}/sources/meta-openembedded/meta-oe/conf/layer.conf" ] &&
         [ -e "${YOCTO_DIR}/sources/meta-opentina/conf/layer.conf" ]
 }

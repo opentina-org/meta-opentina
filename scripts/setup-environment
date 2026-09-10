@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: MIT
-# OpenTina Yocto build environment setup (official poky + meta-oe only)
+# OpenTina Yocto build environment setup (oe-core + bitbake + meta-yocto + meta-oe)
 #
 # Prerequisite: ./yocto-init.sh   (from meta-opentina repository root)
 #
@@ -70,8 +70,9 @@ if [ "${BUILD_DIR#/}" = "${BUILD_DIR}" ]; then
     fi
 fi
 
-if [ ! -f "${YOCTO_DIR}/sources/poky/oe-init-build-env" ]; then
-    echo "ERROR: Official Poky not found at ${YOCTO_DIR}/sources/poky" >&2
+if [ ! -f "${YOCTO_DIR}/sources/openembedded-core/oe-init-build-env" ] ||
+   [ ! -d "${YOCTO_DIR}/sources/bitbake/bin" ]; then
+    echo "ERROR: openembedded-core/bitbake not found under ${YOCTO_DIR}/sources" >&2
     echo "Run: ${INIT_SCRIPT}" >&2
     if [ -x "${INIT_SCRIPT}" ] && [ "${OPENTINA_AUTO_INIT:-0}" = "1" ]; then
         echo "OPENTINA_AUTO_INIT=1: running yocto-init.sh ..."
@@ -116,7 +117,8 @@ if [ ! -d "${BUILD_DIR}/conf" ]; then
     NEW_BUILD=true
 fi
 
-OEROOT="${YOCTO_DIR}/sources/poky"
+OEROOT="${YOCTO_DIR}/sources/openembedded-core"
+export BITBAKEDIR="${YOCTO_DIR}/sources/bitbake"
 # shellcheck disable=SC1091
 . "${OEROOT}/oe-init-build-env" "${BUILD_DIR}" >/dev/null
 
