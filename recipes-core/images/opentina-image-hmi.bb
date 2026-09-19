@@ -30,6 +30,7 @@ IMAGE_INSTALL += " \
     libinput evtest powervr-firmware-a733 \
     mesa-demos kmscube libdrm-tests wayland-utils \
     vulkan-tools glmark2 weston-examples \
+    opentina-hmi-tools \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'systemd systemd-serialgetty', 'sysvinit sysvinit-inittab', d)} \
 "
 
