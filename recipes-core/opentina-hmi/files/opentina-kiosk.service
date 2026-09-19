@@ -1,0 +1,23 @@
+[Unit]
+Description=OpenTina kiosk application
+After=weston.service
+Requires=weston.service
+# Give up instead of restart-looping when the application cannot start at all.
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
+[Service]
+Type=simple
+EnvironmentFile=-@sysconfdir@/default/opentina-hmi
+# weston-init socket-activates @runtimedir@/wayland-0 and runs the compositor
+# as @WESTON_USER@; the kiosk has to match both to reach it.
+Environment=XDG_RUNTIME_DIR=@runtimedir@
+Environment=WAYLAND_DISPLAY=wayland-0
+User=@WESTON_USER@
+Group=@WESTON_USER@
+ExecStart=/bin/sh -c 'exec ${OPENTINA_KIOSK_CMD}'
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=graphical.target
