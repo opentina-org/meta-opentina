@@ -42,6 +42,12 @@ cd meta-opentina
 |--------|-------|-------------|
 | `opentina-minimal` | `opentina-image-minimal` | CLI rootfs (glibc, OpenSSH) |
 | `opentina-qt` | `opentina-image-qt` | Qt5 GUI (`yocto-init.sh --qt`) |
+| `opentina-hmi` | `opentina-image-hmi` | Wayland/Weston HMI, software-rendered (Mesa swrast/llvmpipe, GStreamer, PulseAudio, XWayland) |
+
+Build: `./opentina-build.sh hmi`. Software GL is forced via `/etc/environment`
+(`LIBGL_ALWAYS_SOFTWARE=1`) until an A733 GPU/DRM driver lands; Weston still
+needs a kernel KMS device (e.g. `CONFIG_DRM_SIMPLEDRM`). Chromium (Ozone/Wayland)
+is deferred — it needs meta-browser + meta-clang and a multi-hour build.
 
 Default machine: **`a733-aiot`**
 
@@ -65,10 +71,12 @@ Then rebuild the image: `bitbake opentina-image-minimal -c rootfs -f && bitbake 
 
 ```bash
 cp yocto-sources.conf.example yocto-sources.conf
-# edit POKY_REPO, OE_REPO, OPENTINA_YOCTO_DIR, YOCTO_BRANCH, ...
+# edit OECORE_REPO, OE_REPO, OPENTINA_YOCTO_DIR, YOCTO_BRANCH, ...
 ```
 
-Default branch: **scarthgap**.
+Default branch: **wrynose** (Yocto 6.0 LTS). Layers are fetched separately
+(openembedded-core, bitbake, meta-yocto, meta-openembedded) because the
+combined poky repository stops at walnascar.
 
 ## Manual bitbake
 

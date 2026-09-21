@@ -8,9 +8,12 @@ PACKAGE_CLASSES ?= "package_rpm"
 DL_DIR ?= "${TOPDIR}/../dl"
 SSTATE_DIR ?= "${TOPDIR}/../sstate-cache"
 
-# Parallel builds (adjust to host CPU/RAM)
-BB_NUMBER_THREADS ?= "${@oe.utils.cpu_count()}"
-PARALLEL_MAKE ?= "-j ${@oe.utils.cpu_count()}"
+# Parallel builds: cap both so llvm/clang/mesa compiles stay within RAM
+# (16 threads x -j16 OOM-killed a 27 GiB host); raise on bigger machines.
+BB_NUMBER_THREADS ?= "${@min(oe.utils.cpu_count(), 6)}"
+PARALLEL_MAKE ?= "-j ${@min(oe.utils.cpu_count(), 8)}"
+# Throttle new tasks when memory pressure stalls exceed 5% of a second.
+BB_PRESSURE_MAX_MEMORY ?= "50000"
 
 # Rootfs-only: dummy kernel until Allwinner BSP (U-Boot + linux) is added
 PREFERRED_PROVIDER_virtual/kernel = "linux-dummy"
